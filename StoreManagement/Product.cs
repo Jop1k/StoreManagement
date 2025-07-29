@@ -10,13 +10,13 @@ internal class Product
 
     private Product(string name)
     {
-        Name = name;
-        ExistingProduct.Add(name, this);
+        Name = name.Сapitalize();
+        ExistingProduct.Add(name.ToLower(), this);
     }
 
     public static Product GetInstance(string name)
     {
-        if (ExistingProduct.TryGetValue(name, out Product product))
+        if (ExistingProduct.TryGetValue(name.ToLower(), out Product product))
         {
             return product;
         }
