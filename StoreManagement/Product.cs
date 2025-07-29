@@ -2,7 +2,8 @@
 
 internal class Product
 {
-    private static List<Product> _existingProducts = [];
+    private static Dictionary<string, Product> ExistingProduct { get; } = [];
+
     public Guid Id { get; } = Guid.NewGuid();
 
     public string Name { get; }
@@ -10,17 +11,14 @@ internal class Product
     private Product(string name)
     {
         Name = name;
-        _existingProducts.Add(this);
+        ExistingProduct.Add(name, this);
     }
 
     public static Product GetInstance(string name)
     {
-        foreach (var product in _existingProducts)
+        if (ExistingProduct.TryGetValue(name, out Product product))
         {
-            if (product.Name == name)
-            {
-                return product;
-            }
+            return product;
         }
 
         return new Product(name);
