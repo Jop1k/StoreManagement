@@ -2,27 +2,24 @@
 
 internal class Product
 {
-    private static Dictionary<string, Product> ExistingProduct { get; } = [];
+    private static Dictionary<int, Product> ExistingCodes { get; } = [];
 
-    public Guid Id { get; } = Guid.NewGuid();
+    public int Code { get; }
 
     public string Name { get; }
 
-    private Product(string name)
+    public Product(string name, int code)
     {
-        Name = name.Сapitalize();
-        ExistingProduct.Add(name.ToLower(), this);
-    }
-
-    public static Product GetInstance(string name)
-    {
-        if (ExistingProduct.TryGetValue(name.ToLower(), out Product product))
+        if (ExistingCodes.ContainsKey(code))
         {
-            return product;
+            Console.WriteLine("Товар с таким кодом уже существует.");
+            //throw new ArgumentException("Товар с таким кодом уже существует."); // return null + warn?
         }
 
-        return new Product(name);
+        Code = code;
+        Name = name.Сapitalize();
+        ExistingCodes.Add(code, this);
     }
 
-    public override string ToString() => $"Product: {Name} | ID: {Id}";
+    public override string ToString() => $"Product: {Name} | Code: {Code}";
 }
