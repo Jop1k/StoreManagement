@@ -1,6 +1,6 @@
 ﻿namespace StoreManagement;
 
-internal class Product
+internal class Product // исключения: попытка создать объект с сущ. кодом
 {
     private static Dictionary<int, Product> ExistingCodes { get; } = [];
 
@@ -8,17 +8,21 @@ internal class Product
 
     public string Name { get; }
 
-    public Product(string name, int code)
+    private Product(string name, int code)
     {
-        if (ExistingCodes.ContainsKey(code))
-        {
-            Console.WriteLine("Товар с таким кодом уже существует.");
-            //throw new ArgumentException("Товар с таким кодом уже существует."); // return null + warn?
-        }
-
         Code = code;
         Name = name.Сapitalize();
         ExistingCodes.Add(code, this);
+    }
+
+    public static Product GetInstance(string name, int code)
+    {
+        if (ExistingCodes.ContainsKey(code))
+        {
+            return ExistingCodes[code];
+        }
+
+        return new Product(name, code);
     }
 
     public override string ToString() => $"Product: {Name} | Code: {Code}";

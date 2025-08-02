@@ -2,11 +2,28 @@
 
 internal class ProductInfo
 {
-    public Product Product { get; set; }
+    private int _amount;
+
+    public Product Product { get; }
 
     public decimal Price { get; set; }
 
-    public int Amount { get; set; }
+    public int Amount
+    {
+        get => _amount;
+        set
+        {
+            if (value < 0)
+            {
+                Console.WriteLine("количество продукта не может быть меньше 0");
+                _amount = 0;
+            }
+            else
+            {
+                _amount = value;
+            }
+        }
+    }
 
     public ProductInfo(Product product, decimal price, int amount)
     {

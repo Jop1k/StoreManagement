@@ -1,12 +1,15 @@
-﻿using System.Text;
+﻿namespace StoreManagement;
 
-namespace StoreManagement;
-
-internal class Shop
+internal class Shop // исключения: попытка создать объект с сущ. кодом | пытаемся обратиться по не существующему ключу у Products
 {
+    private Dictionary<int, ProductInfo> _products = [];
+
     private static Dictionary<int, Shop> ExistingCodes { get; } = [];
 
-    private Dictionary<int, ProductInfo> Products { get; } = [];
+    public IReadOnlyDictionary<int, ProductInfo> Products
+    {
+        get => _products.AsReadOnly();
+    }
 
     public int Code { get; }
 
@@ -18,7 +21,7 @@ internal class Shop
     {
         if (ExistingCodes.ContainsKey(code))
         {
-            throw new ArgumentException("Магазин с таким кодом уже существует."); // return null + warn?
+            throw new ArgumentException("Магазин с таким кодом уже существует.");
         }
 
         Code = code;
@@ -27,63 +30,76 @@ internal class Shop
         ExistingCodes.Add(code, this);
     }
 
+    public decimal CalculateTheCost(params (int code, int amount)[] products)
+    {
+        decimal costs = 0;
+
+        foreach (var product in products)
+        {
+            costs += _products[product.code].Price * product.amount;
+        }
+
+        return costs;
+    }
+
+    public bool CanBuyProducts(params (int code, int amount)[] products)
+    {
+        foreach (var product in products)
+        {
+            if (_products[product.code].Amount < product.amount)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public string BuyProducts(params (int code, int amount)[] products)
     {
-        var result = CanBuyProducts(products);
-
-        if (result.canBuy)
+        if (CanBuyProducts(products))
         {
-            return $"Стоимость покупки {result.price}";
-        }
-
-        return $"Сделка невозможна, не хватает товара.";
-    }
-
-    private (decimal price, bool canBuy) CanBuyProducts(params (int code, int amount)[] products)
-    {
-        decimal cost = 0;
-
-        foreach (var product in products)
-        {
-            if (Products[product.code].Amount < product.amount)
+            foreach (var product in products)
             {
-                return (0, false);
+                _products[product.code].Amount -= product.amount;
             }
 
-            cost += Products[product.code].Price;
+            return $"Успешно! Стоимость всего товара: {CalculateTheCost(products)}.";
         }
 
-        return (cost ,true);
+        return $"Ошибка! Не хватает товара.";
     }
 
-    public void ReceiveProducts(params (int code, int amount)[] products)
+    public void ReceiveProducts((Product product, int amount, decimal price) receivedProduct) // написать метод для получения товара из кода?
     {
-        foreach (var product in products)
+        if (_products.ContainsKey(receivedProduct.product.Code))
         {
-            Products[product.code].Amount += product.amount;
+            _products[receivedProduct.product.Code].Amount += receivedProduct.amount;
+            ChangePrice(receivedProduct.product.Code, receivedProduct.price);
+            return;
         }
+
+        _products.Add(receivedProduct.product.Code, new ProductInfo(receivedProduct.product, receivedProduct.price, receivedProduct.amount));
+    }
+
+    public Dictionary<Product, int> FindPurchasableProducts(decimal budget)
+    {
+        Dictionary<Product, int> affordableProducts = [];
+
+        foreach (var product in _products.Values)
+        {
+            if (product.Price <= budget)
+            {
+                affordableProducts.Add(product.Product, (int)(budget / product.Price) > product.Amount ? product.Amount : (int)(budget / product.Price));
+            }
+        }
+
+        return affordableProducts;
     }
 
     public void ChangePrice(int productCode, decimal newPrice)
     {
-        Products[productCode].Price = newPrice;
-    }
-
-    public void CreateProduct(string name, int code, decimal price)
-    {
-        Products.Add(code, new ProductInfo(new Product(name, code), price, 0));
-    }
-
-    public List<ProductInfo> GetAllProducts()
-    {
-        List<ProductInfo> products = [];
-
-        foreach (var product in Products.Values)
-        {
-            products.Add(product);
-        }
-
-        return products;
+        _products[productCode].Price = newPrice;
     }
 
     public override string ToString() => $"Shop: {Name} | Code: {Code} | {Address}";

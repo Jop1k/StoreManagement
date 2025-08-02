@@ -1,6 +1,6 @@
 ﻿namespace StoreManagement;
 
-internal class Address
+internal class Address // undone
 {
     public string Country { get; set; } = "Unknown";
 
@@ -9,6 +9,8 @@ internal class Address
     public string Street { get; set; } = "Unknown";
 
     public string Building { get; set; } = "Unknown";
+
+    public Address() { }
 
     public Address(string county, string city, string street, string building)
     {
