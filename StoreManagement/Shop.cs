@@ -1,15 +1,14 @@
 ﻿namespace StoreManagement;
 
-internal class Shop // исключения: попытка создать объект с сущ. кодом | пытаемся обратиться по не существующему ключу у Products
+internal class Shop
 {
+    private static Dictionary<int, Shop> _existingCodes = [];
+
     private Dictionary<int, ProductInfo> _products = [];
 
-    private static Dictionary<int, Shop> ExistingCodes { get; } = [];
+    public IReadOnlyDictionary<int, Shop> ExistingCodes => _existingCodes.AsReadOnly();
 
-    public IReadOnlyDictionary<int, ProductInfo> Products
-    {
-        get => _products.AsReadOnly();
-    }
+    public IReadOnlyDictionary<int, ProductInfo> Products => _products.AsReadOnly();
 
     public int Code { get; }
 
@@ -19,7 +18,7 @@ internal class Shop // исключения: попытка создать об�
 
     public Shop(string name, int code, Address address)
     {
-        if (ExistingCodes.ContainsKey(code))
+        if (_existingCodes.ContainsKey(code))
         {
             throw new ArgumentException("Магазин с таким кодом уже существует.");
         }
@@ -27,7 +26,7 @@ internal class Shop // исключения: попытка создать об�
         Code = code;
         Name = name;
         Address = address;
-        ExistingCodes.Add(code, this);
+        _existingCodes.Add(code, this);
     }
 
     public decimal CalculateTheCost(params (int code, int amount)[] products)
@@ -36,6 +35,11 @@ internal class Shop // исключения: попытка создать об�
 
         foreach (var product in products)
         {
+            if (!_existingCodes.ContainsKey(product.code))
+            {
+                throw new ArgumentException("Товар с таким кодом не найден.");
+            }
+
             costs += _products[product.code].Price * product.amount;
         }
 
@@ -46,6 +50,11 @@ internal class Shop // исключения: попытка создать об�
     {
         foreach (var product in products)
         {
+            if (!_existingCodes.ContainsKey(product.code))
+            {
+                throw new ArgumentException("Товар с таким кодом не найден.");
+            }
+
             if (_products[product.code].Amount < product.amount)
             {
                 return false;
@@ -55,7 +64,7 @@ internal class Shop // исключения: попытка создать об�
         return true;
     }
 
-    public string BuyProducts(params (int code, int amount)[] products)
+    public (bool, decimal) BuyProducts(params (int code, int amount)[] products)
     {
         if (CanBuyProducts(products))
         {
@@ -64,13 +73,13 @@ internal class Shop // исключения: попытка создать об�
                 _products[product.code].Amount -= product.amount;
             }
 
-            return $"Успешно! Стоимость всего товара: {CalculateTheCost(products)}.";
+            return (true, CalculateTheCost(products));
         }
 
-        return $"Ошибка! Не хватает товара.";
+        return (false, 0);
     }
 
-    public void ReceiveProducts((Product product, int amount, decimal price) receivedProduct) // написать метод для получения товара из кода?
+    public void ReceiveProducts((Product product, int amount, decimal price) receivedProduct) // возможность установить или изменить цену
     {
         if (_products.ContainsKey(receivedProduct.product.Code))
         {
@@ -97,10 +106,7 @@ internal class Shop // исключения: попытка создать об�
         return affordableProducts;
     }
 
-    public void ChangePrice(int productCode, decimal newPrice)
-    {
-        _products[productCode].Price = newPrice;
-    }
+    public void ChangePrice(int productCode, decimal newPrice) => _products[productCode].Price = newPrice;
 
     public override string ToString() => $"Shop: {Name} | Code: {Code} | {Address}";
 }

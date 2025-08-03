@@ -3,10 +3,7 @@
 internal class ProductInfo
 {
     private int _amount;
-
-    public Product Product { get; }
-
-    public decimal Price { get; set; }
+    private decimal _price;
 
     public int Amount
     {
@@ -15,8 +12,7 @@ internal class ProductInfo
         {
             if (value < 0)
             {
-                Console.WriteLine("количество продукта не может быть меньше 0");
-                _amount = 0;
+                throw new ArgumentException("Количество товара не может быть отрицательным.");
             }
             else
             {
@@ -24,6 +20,24 @@ internal class ProductInfo
             }
         }
     }
+
+    public decimal Price
+    {
+        get => _price;
+        set
+        {
+            if (value < 0)
+            {
+                throw new ArgumentException("Стоимость товара не может быть отрицательной.");
+            }
+            else
+            {
+                _price = value;
+            }
+        }
+    }
+
+    public Product Product { get; }
 
     public ProductInfo(Product product, decimal price, int amount)
     {
