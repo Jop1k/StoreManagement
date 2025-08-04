@@ -1,10 +1,10 @@
 ﻿namespace StoreManagement;
 
-internal class Product
+public class Product
 {
     private static Dictionary<int, Product> _existingCodes = [];
 
-    public IReadOnlyDictionary<int, Product> ExistingCodes => _existingCodes.AsReadOnly();
+    public static IReadOnlyDictionary<int, Product> ExistingCodes => _existingCodes.AsReadOnly();
 
     public int Code { get; }
 
@@ -14,13 +14,15 @@ internal class Product
     {
         if (_existingCodes.ContainsKey(code))
         {
-            throw new ArgumentException("Товар с данным кодом уже существует.");
+            throw new ArgumentException($"Product with code {code} already exists.");
         }
 
         Code = code;
         Name = name.Сapitalize();
         _existingCodes.Add(code, this);
     }
+
+    public static void ClearExistingCodes() => _existingCodes.Clear();
 
     public override string ToString() => $"Product: {Name} | Code: {Code}";
 }

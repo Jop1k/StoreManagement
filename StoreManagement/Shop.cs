@@ -1,12 +1,12 @@
 ﻿namespace StoreManagement;
 
-internal class Shop
+public class Shop
 {
     private static Dictionary<int, Shop> _existingCodes = [];
 
     private Dictionary<int, ProductInfo> _products = [];
 
-    public IReadOnlyDictionary<int, Shop> ExistingCodes => _existingCodes.AsReadOnly();
+    public static IReadOnlyDictionary<int, Shop> ExistingCodes => _existingCodes.AsReadOnly();
 
     public IReadOnlyDictionary<int, ProductInfo> Products => _products.AsReadOnly();
 
@@ -20,7 +20,7 @@ internal class Shop
     {
         if (_existingCodes.ContainsKey(code))
         {
-            throw new ArgumentException("Магазин с таким кодом уже существует.");
+            throw new ArgumentException($"Shop with code {code} already exists.");
         }
 
         Code = code;
@@ -35,9 +35,9 @@ internal class Shop
 
         foreach (var product in products)
         {
-            if (!_existingCodes.ContainsKey(product.code))
+            if (!_products.ContainsKey(product.code))
             {
-                throw new ArgumentException("Товар с таким кодом не найден.");
+                throw new ArgumentException($"Product with code {product.code} not found in the shop.");
             }
 
             costs += _products[product.code].Price * product.amount;
@@ -50,9 +50,9 @@ internal class Shop
     {
         foreach (var product in products)
         {
-            if (!_existingCodes.ContainsKey(product.code))
+            if (!_products.ContainsKey(product.code))
             {
-                throw new ArgumentException("Товар с таким кодом не найден.");
+                return false;
             }
 
             if (_products[product.code].Amount < product.amount)
@@ -79,16 +79,16 @@ internal class Shop
         return (false, 0);
     }
 
-    public void ReceiveProducts((Product product, int amount, decimal price) receivedProduct) // возможность установить или изменить цену
+    public void ReceiveProduct(Product product, int amount, decimal price)
     {
-        if (_products.ContainsKey(receivedProduct.product.Code))
+        if (_products.ContainsKey(product.Code))
         {
-            _products[receivedProduct.product.Code].Amount += receivedProduct.amount;
-            ChangePrice(receivedProduct.product.Code, receivedProduct.price);
+            _products[product.Code].Amount += amount;
+            ChangePrice(product.Code, price);
             return;
         }
 
-        _products.Add(receivedProduct.product.Code, new ProductInfo(receivedProduct.product, receivedProduct.price, receivedProduct.amount));
+        _products.Add(product.Code, new ProductInfo(product, price, amount));
     }
 
     public Dictionary<Product, int> FindPurchasableProducts(decimal budget)
@@ -107,6 +107,8 @@ internal class Shop
     }
 
     public void ChangePrice(int productCode, decimal newPrice) => _products[productCode].Price = newPrice;
+
+    public static void ClearExistingCodes() => _existingCodes.Clear();
 
     public override string ToString() => $"Shop: {Name} | Code: {Code} | {Address}";
 }

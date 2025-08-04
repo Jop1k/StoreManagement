@@ -1,7 +1,9 @@
 ﻿namespace StoreManagement;
 
-internal class ShopService
+public class ShopService
 {
+    private static ShopService _instance;
+
     private Dictionary<int, Product> _products = [];
 
     private Dictionary<int, Shop> _shops = [];
@@ -9,6 +11,18 @@ internal class ShopService
     public IReadOnlyDictionary<int, Product> Products => _products.AsReadOnly();
 
     public IReadOnlyDictionary<int, Shop> Shops => _shops.AsReadOnly();
+
+    private ShopService() { }
+
+    public static ShopService GetInstance()
+    {
+        if (_instance == null)
+        {
+            return new ShopService();
+        }
+
+        return _instance;
+    }
 
     public Shop FindShopWithLowestCartTotal(params (int productCode, int amount)[] products)
     {
@@ -50,24 +64,31 @@ internal class ShopService
         return store;
     }
 
-    public void DeliverProduct(int shopCode, params (int productCode, int amount, decimal price)[] receivedProducts) // возможность установить или изменить цену
+    public void DeliverProducts(int shopCode, params (int productCode, int amount, decimal price)[] receivedProducts)
     {
-        foreach (var productInfo in receivedProducts)
+        foreach (var product in receivedProducts)
         {
             if (!Shops.ContainsKey(shopCode))
             {
                 throw new ArgumentException("Магазин с таким кодом не найден.");
             }
-            if (!_products.ContainsKey(productInfo.productCode))
+            if (!_products.ContainsKey(product.productCode))
             {
                 throw new ArgumentException("Товара с таким кодом не существует.");
             }
 
-            Shops[shopCode].ReceiveProducts((_products[productInfo.productCode], productInfo.amount, productInfo.price));
+            Shops[shopCode].ReceiveProduct(_products[product.productCode], product.amount, product.price);
         }
     }
 
     public void CreateShop(string name, int code, Address address) => _shops.Add(code, new Shop(name, code, address));
 
     public void CreateProduct(string name, int code) => _products.Add(code, new Product(name, code));
+
+    public static void Clear()
+    {
+        _instance = null;
+        Shop.ClearExistingCodes();
+        Product.ClearExistingCodes();
+    }
 }

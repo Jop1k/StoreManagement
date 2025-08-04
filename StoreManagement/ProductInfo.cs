@@ -1,6 +1,6 @@
 ﻿namespace StoreManagement;
 
-internal class ProductInfo
+public class ProductInfo
 {
     private int _amount;
     private decimal _price;
@@ -12,7 +12,7 @@ internal class ProductInfo
         {
             if (value < 0)
             {
-                throw new ArgumentException("Количество товара не может быть отрицательным.");
+                throw new ArgumentException("The quantity of products cannot be negative.");
             }
             else
             {
@@ -28,7 +28,7 @@ internal class ProductInfo
         {
             if (value < 0)
             {
-                throw new ArgumentException("Стоимость товара не может быть отрицательной.");
+                throw new ArgumentException("The cost of a product cannot be negative.");
             }
             else
             {
