@@ -2,93 +2,97 @@
 
 public class ShopService
 {
-    private static ShopService _instance;
-
-    private Dictionary<int, Product> _products = [];
-
-    private Dictionary<int, Shop> _shops = [];
-
-    public IReadOnlyDictionary<int, Product> Products => _products.AsReadOnly();
-
-    public IReadOnlyDictionary<int, Shop> Shops => _shops.AsReadOnly();
-
-    private ShopService() { }
-
-    public static ShopService GetInstance()
+    public static decimal CalculateTheCost(Shop shop, params (int code, int quantity)[] products)
     {
-        if (_instance == null)
+        decimal costs = 0;
+
+        foreach (var (code, quantity) in products)
         {
-            return new ShopService();
+            if (quantity < 0)
+            {
+                throw new ArgumentException("The quantity of products cannot be negative.");
+            }
+
+            if (!shop.Products.ContainsKey(code))
+            {
+                throw new ArgumentException($"Product with code {code} not found in the shop.");
+            }
+
+            costs += shop.Products[code].Price * quantity;
         }
 
-        return _instance;
+        return costs;
     }
 
-    public Shop FindShopWithLowestCartTotal(params (int productCode, int amount)[] products)
+    public static bool CanBuyProducts(Shop shop, params (int code, int quantity)[] products)
     {
-        Shop store = null!;
-        decimal lowPrice = decimal.MaxValue;
-
-        foreach (var shop in Shops.Values)
+        foreach (var (code, quantity) in products)
         {
-            if (shop.CanBuyProducts(products))
+            if (quantity < 0)
             {
-                if (lowPrice > shop.CalculateTheCost(products))
-                {
-                    lowPrice = shop.CalculateTheCost(products);
-                    store = shop;
-                }
+                throw new ArgumentException("The quantity of products cannot be negative.");
+            }
+
+            if (!shop.Products.ContainsKey(code) || shop.Products[code].Quantity < quantity)
+            {
+                return false;
             }
         }
 
-        return store;
+        return true;
     }
 
-    public Shop FindShopWithLowestPrice(int productCode)
+    public static (bool, decimal) BuyProducts(Shop shop, params (int code, int quantity)[] products)
     {
-        Shop store = null!;
-        decimal lowPrice = decimal.MaxValue;
-
-        foreach (var shop in Shops.Values)
+        if (CanBuyProducts(shop, products))
         {
-            if (shop.Products.ContainsKey(productCode))
+            foreach (var (code, quantity) in products)
             {
-                if (lowPrice > shop.Products[productCode].Price && shop.Products[productCode].Amount > 0)
-                {
-                    lowPrice = shop.Products[productCode].Price;
-                    store = shop;
-                }
+                shop.Products[code].Quantity -= quantity;
+            }
+
+            return (true, CalculateTheCost(shop, products));
+        }
+
+        return (false, 0);
+    }
+
+    public static void ReceiveProduct(Shop shop, Product product, int quantity, decimal price)
+    {
+        if (quantity < 0)
+        {
+            throw new ArgumentException("The quantity of products cannot be negative.");
+        }
+
+        if (shop.Products.ContainsKey(product.Code))
+        {
+            shop.Products[product.Code].Quantity += quantity;
+            shop.ChangePrice(product.Code, price);
+            return;
+        }
+
+        shop.AddProduct(product, price, quantity);
+    }
+
+    public static Dictionary<Product, int> FindPurchasableProducts(Shop shop, decimal budget)
+    {
+        if (budget < 0)
+        {
+            throw new ArgumentException("Budget cannot be negative.");
+        }
+
+        Dictionary<Product, int> purchasableProducts = [];
+
+        foreach (var product in shop.Products.Values)
+        {
+            if (product.Price <= budget)
+            {
+                int maxAmount = (int)(budget / product.Price);
+
+                purchasableProducts.Add(product.Product, maxAmount > product.Quantity ? product.Quantity : maxAmount);
             }
         }
 
-        return store;
-    }
-
-    public void DeliverProducts(int shopCode, params (int productCode, int amount, decimal price)[] receivedProducts)
-    {
-        foreach (var product in receivedProducts)
-        {
-            if (!Shops.ContainsKey(shopCode))
-            {
-                throw new ArgumentException("Магазин с таким кодом не найден.");
-            }
-            if (!_products.ContainsKey(product.productCode))
-            {
-                throw new ArgumentException("Товара с таким кодом не существует.");
-            }
-
-            Shops[shopCode].ReceiveProduct(_products[product.productCode], product.amount, product.price);
-        }
-    }
-
-    public void CreateShop(string name, int code, Address address) => _shops.Add(code, new Shop(name, code, address));
-
-    public void CreateProduct(string name, int code) => _products.Add(code, new Product(name, code));
-
-    public static void Clear()
-    {
-        _instance = null;
-        Shop.ClearExistingCodes();
-        Product.ClearExistingCodes();
+        return purchasableProducts;
     }
 }

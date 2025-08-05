@@ -2,12 +2,12 @@
 
 public class ProductInfo
 {
-    private int _amount;
+    private int _quantity;
     private decimal _price;
 
-    public int Amount
+    public int Quantity
     {
-        get => _amount;
+        get => _quantity;
         set
         {
             if (value < 0)
@@ -16,7 +16,7 @@ public class ProductInfo
             }
             else
             {
-                _amount = value;
+                _quantity = value;
             }
         }
     }
@@ -39,12 +39,12 @@ public class ProductInfo
 
     public Product Product { get; }
 
-    public ProductInfo(Product product, decimal price, int amount)
+    public ProductInfo(Product product, decimal price, int quantity)
     {
         Product = product;
         Price = price;
-        Amount = amount;
+        Quantity = quantity;
     }
 
-    public override string ToString() => $"{Product} | Price: {Price} | Amount: {Amount}";
+    public override string ToString() => $"{Product} | Price: {Price} | Quantity: {Quantity}";
 }
